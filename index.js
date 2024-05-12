@@ -4,6 +4,7 @@ const colors = require("colors");
 const dotenv = require("dotenv").config();
 const cookieParser = require("cookie-parser");
 const { MongoClient, ServerApiVersion } = require("mongodb");
+const jwt = require("jsonwebtoken");
 
 // Init Express.
 const app = express();
@@ -19,6 +20,8 @@ app.use(
     credentials: true,
   })
 );
+
+app.use(cookieParser());
 
 // cookies options
 const cookieOptions = {
@@ -44,6 +47,27 @@ async function run() {
   try {
     await client.connect();
     console.log(`MongoDb connection is successfull!`.bgGreen.black);
+
+    // Auth related api
+    app.post("/user", async (req, res) => {
+      const loggedInUser = req.body;
+      const email = loggedInUser.email;
+      const token = jwt.sign({ email }, process.env.ACCESS_TOKEN_SECRET, {
+        expiresIn: "1h",
+      });
+      res.cookie("accessToken", token, cookieOptions);
+      res.send({ status: true });
+    });
+
+    app.get("/user/logout", async (req, res) => {
+      res.clearCookie("accessToken", { ...cookieOptions, maxAge: 0 });
+      res.send({ message: "Logout successfull" });
+    });
+
+    // Routes
+    app.get("/", (req, res) => {
+      res.send(`FoodLane server is running on port : ${port}`);
+    });
   } finally {
     // Ensures that the client will close when you finish/error
     // await client.close();
