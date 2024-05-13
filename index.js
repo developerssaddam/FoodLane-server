@@ -117,6 +117,21 @@ async function run() {
       res.send(result);
     });
 
+    // Get my added item api
+    app.get("/food/my/added", verifyToken, async (req, res) => {
+      const userEmail = req.query.email;
+      const tokenEmail = req.user.email;
+      
+      // Check valid user.
+      if (userEmail !== tokenEmail) {
+        return res.status(403).send({ message: "Forbiden!" });
+      }
+
+      const query = { userEmail: userEmail };
+      const result = await foodCollection.find(query).toArray();
+      res.send(result);
+    });
+
     // Update purchase food item count field of foodCollection when purchase item.
     app.put("/food/update", async (req, res) => {
       const updatedData = req.body;
