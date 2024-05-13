@@ -139,6 +139,21 @@ async function run() {
       res.send(result);
     });
 
+    // Get my purchase list api
+    app.get("/food/my/purchase", verifyToken, async (req, res) => {
+      const userEmail = req.query.email;
+      const tokenEmail = req.user.email;
+
+      // Check valid user.
+      if (userEmail !== tokenEmail) {
+        return res.status(403).send({ message: "Forbiden!" });
+      }
+
+      const query = { buyerEmail: userEmail };
+      const result = await purchaseFoodCollection.find(query).toArray();
+      res.send(result);
+    });
+
     // Routes
     app.get("/", (req, res) => {
       res.send(`FoodLane server is running on port : ${port}`);
