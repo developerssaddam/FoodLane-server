@@ -82,7 +82,7 @@ async function run() {
 
     // Logout with clear cookie
     app.get("/user/logout", async (req, res) => {
-      res.clearCookie("accessToken", { ...cookieOptions, maxAge: 0 });
+      res.clearCookie("accessToken", { maxAge: 0 });
       res.send({ message: "Logout successfull" });
     });
 
@@ -121,7 +121,7 @@ async function run() {
     app.get("/food/my/added", verifyToken, async (req, res) => {
       const userEmail = req.query.email;
       const tokenEmail = req.user.email;
-      
+
       // Check valid user.
       if (userEmail !== tokenEmail) {
         return res.status(403).send({ message: "Forbiden!" });
@@ -129,6 +129,24 @@ async function run() {
 
       const query = { userEmail: userEmail };
       const result = await foodCollection.find(query).toArray();
+      res.send(result);
+    });
+
+    // update my added item
+    app.put("/food/myadded/update", async (req, res) => {
+      const updatedData = req.body;
+      const id = updatedData.id;
+      const query = { _id: new ObjectId(id) };
+      const updatedDoc = {
+        $set: {
+          name: updatedData.name,
+          photo: updatedData.photo,
+          price: updatedData.price,
+          quantity: updatedData.quantity,
+        },
+      };
+
+      const result = await foodCollection.updateOne(query, updatedDoc);
       res.send(result);
     });
 
