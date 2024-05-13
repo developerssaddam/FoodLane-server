@@ -16,7 +16,11 @@ const port = process.env.PORT || 9000;
 app.use(express.json());
 app.use(
   cors({
-    origin: ["http://localhost:5173"],
+    origin: [
+      "http://localhost:3000",
+      "https://food-lane-9e48d.web.app",
+      "https://foodlane-server-pq5c5lrfr-md-saddam-hossen.vercel.app",
+    ],
     credentials: true,
   })
 );
@@ -42,11 +46,29 @@ const client = new MongoClient(uri, {
   },
 });
 
+// Token varify middleware
+const verifyToken = (req, res, next) => {
+  const token = req.cookies.accessToken;
+  if (!token) {
+    return res.status(401).send({ message: "Unauthorized" });
+  }
+
+  // Now verify token
+  jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decoded) => {
+    if (err) {
+      res.status(401).send({ message: "Unauthorized" });
+    } else {
+      req.user = decoded;
+      next();
+    }
+  });
+};
+
 // Mongodb Connection function
 async function run() {
   try {
-    await client.connect();
-    console.log(`MongoDb connection is successfull!`.bgGreen.black);
+    // await client.connect();
+    // console.log(`MongoDb connection is successfull!`.bgGreen.black);
 
     // Auth related api
     app.post("/user", async (req, res) => {
@@ -59,9 +81,24 @@ async function run() {
       res.send({ status: true });
     });
 
+    // Logout with clear cookie
     app.get("/user/logout", async (req, res) => {
       res.clearCookie("accessToken", { ...cookieOptions, maxAge: 0 });
       res.send({ message: "Logout successfull" });
+    });
+
+    /**
+     *  Foodlane apis
+     * ===============
+     */
+
+    const foodCollection = client.db("foodLaneDB").collection("foodCollection");
+
+    // Add food item
+    app.post("/food/add", async (req, res) => {
+      const newFood = req.body;
+      const result = await foodCollection.insertOne(newFood);
+      res.send(result);
     });
 
     // Routes
