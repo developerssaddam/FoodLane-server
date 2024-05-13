@@ -3,7 +3,7 @@ const cors = require("cors");
 const colors = require("colors");
 const dotenv = require("dotenv").config();
 const cookieParser = require("cookie-parser");
-const { MongoClient, ServerApiVersion } = require("mongodb");
+const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const jwt = require("jsonwebtoken");
 
 // Init Express.
@@ -105,6 +105,14 @@ async function run() {
       const newFood = req.body;
       const result = await foodCollection.insertOne(newFood);
       res.send(result);
+    });
+
+    // Get Single food by id
+    app.get("/food/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const singleFood = await foodCollection.findOne(query);
+      res.send(singleFood);
     });
 
     // Routes
