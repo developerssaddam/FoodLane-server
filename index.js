@@ -24,7 +24,6 @@ app.use(
     credentials: true,
   })
 );
-
 app.use(cookieParser());
 
 // cookies options
@@ -93,11 +92,22 @@ async function run() {
      */
 
     const foodCollection = client.db("foodLaneDB").collection("foodCollection");
+    const purchaseFoodCollection = client
+      .db("foodLaneDB")
+      .collection("purchaseFoodCollection");
 
     // Get allFoods
     app.get("/allfoods", async (req, res) => {
       const allFoods = await foodCollection.find().toArray();
       res.send(allFoods);
+    });
+
+    // Get Single food by id
+    app.get("/food/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const singleFood = await foodCollection.findOne(query);
+      res.send(singleFood);
     });
 
     // Add food item
@@ -107,12 +117,26 @@ async function run() {
       res.send(result);
     });
 
-    // Get Single food by id
-    app.get("/food/:id", async (req, res) => {
-      const id = req.params.id;
+    // Update purchase food item count field of foodCollection when purchase item.
+    app.put("/food/update", async (req, res) => {
+      const updatedData = req.body;
+      const { id, count, quantity } = updatedData;
       const query = { _id: new ObjectId(id) };
-      const singleFood = await foodCollection.findOne(query);
-      res.send(singleFood);
+      const updateDoc = {
+        $set: {
+          count: count,
+          quantity: quantity,
+        },
+      };
+      const result = await foodCollection.updateOne(query, updateDoc);
+      res.send(result);
+    });
+
+    // Add purchase food items
+    app.post("/food/purchase", async (req, res) => {
+      const newPurchaseItem = req.body;
+      const result = await purchaseFoodCollection.insertOne(newPurchaseItem);
+      res.send(result);
     });
 
     // Routes
