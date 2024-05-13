@@ -94,6 +94,12 @@ async function run() {
 
     const foodCollection = client.db("foodLaneDB").collection("foodCollection");
 
+    // Get allFoods
+    app.get("/allfoods", async (req, res) => {
+      const allFoods = await foodCollection.find().toArray();
+      res.send(allFoods);
+    });
+
     // Add food item
     app.post("/food/add", async (req, res) => {
       const newFood = req.body;
