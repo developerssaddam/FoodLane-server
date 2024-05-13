@@ -187,6 +187,14 @@ async function run() {
       res.send(result);
     });
 
+    // Delete my purchase item
+    app.delete("/food/my/purchase/remove", async (req, res) => {
+      const id = req.query.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await purchaseFoodCollection.deleteOne(query);
+      res.send(result);
+    });
+
     // Routes
     app.get("/", (req, res) => {
       res.send(`FoodLane server is running on port : ${port}`);
