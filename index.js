@@ -112,6 +112,20 @@ async function run() {
       res.send(topSellingFood);
     });
 
+    // AllFood Search api
+    app.get("/allfood/search", async (req, res) => {
+      const searchValue = req.query.name;
+      const data = await foodCollection
+        .find({
+          $or: [
+            { name: { $regex: searchValue } },
+            { category: { $regex: searchValue } },
+          ],
+        })
+        .toArray();
+      res.send(data);
+    });
+
     // Get Single food by id
     app.get("/food/:id", async (req, res) => {
       const id = req.params.id;
