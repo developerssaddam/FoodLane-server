@@ -95,6 +95,9 @@ async function run() {
     const purchaseFoodCollection = client
       .db("foodLaneDB")
       .collection("purchaseFoodCollection");
+    const foodImgCollection = client
+      .db("foodLaneDB")
+      .collection("foodImgCollection");
 
     // Get allFoods
     app.get("/allfoods", async (req, res) => {
@@ -216,6 +219,19 @@ async function run() {
       const id = req.query.id;
       const query = { _id: new ObjectId(id) };
       const result = await purchaseFoodCollection.deleteOne(query);
+      res.send(result);
+    });
+
+    // Add image and feedback in gallery page api
+    app.post("/gallery/add", async (req, res) => {
+      const data = req.body;
+      const result = await foodImgCollection.insertOne(data);
+      res.status(200).send(result);
+    });
+
+    // Get all feedback in gallery page
+    app.get("/gallery/allfeedback", async (req, res) => {
+      const result = await foodImgCollection.find().toArray();
       res.send(result);
     });
 
