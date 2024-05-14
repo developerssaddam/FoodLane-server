@@ -102,6 +102,16 @@ async function run() {
       res.send(allFoods);
     });
 
+    // Get top-6 food item based on selleing
+    app.get("/allfoods/count", async (req, res) => {
+      const allFoods = await foodCollection.find().toArray();
+      const sortedAllFoods = allFoods.sort((a, b) => {
+        return b.count - a.count;
+      });
+      const topSellingFood = sortedAllFoods.slice(0, 6);
+      res.send(topSellingFood);
+    });
+
     // Get Single food by id
     app.get("/food/:id", async (req, res) => {
       const id = req.params.id;
