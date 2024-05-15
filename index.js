@@ -45,7 +45,7 @@ const client = new MongoClient(uri, {
   },
 });
 
-// Token varify middleware
+// JWT Token varify middleware
 const verifyToken = (req, res, next) => {
   const token = req.cookies.accessToken;
   if (!token) {
@@ -69,6 +69,16 @@ async function run() {
     // await client.connect();
     // console.log(`MongoDb connection is successfull!`.bgGreen.black);
 
+    // All db collections.
+    const userCollection = client.db("foodLaneDB").collection("userCollection");
+    const foodCollection = client.db("foodLaneDB").collection("foodCollection");
+    const purchaseFoodCollection = client
+      .db("foodLaneDB")
+      .collection("purchaseFoodCollection");
+    const foodImgCollection = client
+      .db("foodLaneDB")
+      .collection("foodImgCollection");
+
     // Auth related api
     app.post("/user", async (req, res) => {
       const loggedInUser = req.body;
@@ -81,23 +91,23 @@ async function run() {
     });
 
     // Logout with clear cookie
-    app.get("/user/logout", async (req, res) => {
-      res.clearCookie("accessToken", { maxAge: 0 });
-      res.send({ message: "Logout successfull" });
+    app.post("/user/logout", async (req, res) => {
+      res
+        .clearCookie("accessToken", { ...cookieOptions, maxAge: 0 })
+        .send({ message: "Logout successfull" });
+    });
+
+    // After registration store user data.
+    app.post("/foodlane/users", async (req, res) => {
+      const newUser = req.body;
+      const result = await userCollection.insertOne(newUser);
+      res.send(result);
     });
 
     /**
      *  Foodlane apis
      * ===============
      */
-
-    const foodCollection = client.db("foodLaneDB").collection("foodCollection");
-    const purchaseFoodCollection = client
-      .db("foodLaneDB")
-      .collection("purchaseFoodCollection");
-    const foodImgCollection = client
-      .db("foodLaneDB")
-      .collection("foodImgCollection");
 
     // Get allFoods
     app.get("/allfoods", async (req, res) => {
@@ -138,7 +148,7 @@ async function run() {
     });
 
     // Add food item
-    app.post("/food/add", async (req, res) => {
+    app.post("/food/add", verifyToken, async (req, res) => {
       const newFood = req.body;
       const result = await foodCollection.insertOne(newFood);
       res.send(result);
@@ -193,13 +203,13 @@ async function run() {
     });
 
     // Add purchase food items
-    app.post("/food/purchase", async (req, res) => {
+    app.post("/food/purchase", verifyToken, async (req, res) => {
       const newPurchaseItem = req.body;
       const result = await purchaseFoodCollection.insertOne(newPurchaseItem);
       res.send(result);
     });
 
-    // Get my purchase list api
+    // Get my purchase food items list.
     app.get("/food/my/purchase", verifyToken, async (req, res) => {
       const userEmail = req.query.email;
       const tokenEmail = req.user.email;
@@ -223,7 +233,7 @@ async function run() {
     });
 
     // Add image and feedback in gallery page api
-    app.post("/gallery/add", async (req, res) => {
+    app.post("/gallery/add", verifyToken, async (req, res) => {
       const data = req.body;
       const result = await foodImgCollection.insertOne(data);
       res.status(200).send(result);
