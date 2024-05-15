@@ -110,10 +110,10 @@ async function run() {
      */
 
     // Get allFoods
-    app.get("/allfoods", async (req, res) => {
-      const allFoods = await foodCollection.find().toArray();
-      res.send(allFoods);
-    });
+    // app.get("/allfoods", async (req, res) => {
+    //   const allFoods = await foodCollection.find().toArray();
+    //   res.send(allFoods);
+    // });
 
     // Get top-6 food item based on selleing
     app.get("/allfoods/count", async (req, res) => {
@@ -242,6 +242,25 @@ async function run() {
     // Get all feedback in gallery page
     app.get("/gallery/allfeedback", async (req, res) => {
       const result = await foodImgCollection.find().toArray();
+      res.send(result);
+    });
+
+    // Count all food products
+    app.get("/count/allfoods", async (req, res) => {
+      const totalFood = await foodCollection.estimatedDocumentCount();
+      res.send({ totalFood });
+    });
+
+    // pagination api
+    app.get("/foods/pagination", async (req, res) => {
+      const page = parseInt(req.query.page);
+      const size = parseInt(req.query.size);
+
+      const result = await foodCollection
+        .find()
+        .skip(page * size)
+        .limit(size)
+        .toArray();
       res.send(result);
     });
 
