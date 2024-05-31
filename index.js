@@ -5,6 +5,7 @@ const dotenv = require("dotenv").config();
 const cookieParser = require("cookie-parser");
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const jwt = require("jsonwebtoken");
+const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
 
 // Init Express.
 const app = express();
@@ -72,6 +73,9 @@ async function run() {
     // All db collections.
     const userCollection = client.db("foodLaneDB").collection("userCollection");
     const foodCollection = client.db("foodLaneDB").collection("foodCollection");
+    const paymentCollection = client
+      .db("foodLaneDB")
+      .collection("paymentCollection");
     const purchaseFoodCollection = client
       .db("foodLaneDB")
       .collection("purchaseFoodCollection");
@@ -131,8 +135,8 @@ async function run() {
       const data = await foodCollection
         .find({
           $or: [
-            { name: { $regex: searchValue } },
-            { category: { $regex: searchValue } },
+            { name: { $regex: searchValue, $options: "i" } },
+            { category: { $regex: searchValue, $options: "i" } },
           ],
         })
         .toArray();
@@ -261,6 +265,45 @@ async function run() {
         .skip(page * size)
         .limit(size)
         .toArray();
+      res.send(result);
+    });
+
+    // Payment intent
+    app.post("/payment", async (req, res) => {
+      const { price } = req.body;
+      const totalPrice = price * 100;
+      const paymentIntent = await stripe.paymentIntents.create({
+        amount: totalPrice,
+        currency: "usd",
+        payment_method_types: ["card"],
+      });
+
+      res.send({
+        clientSecret: paymentIntent.client_secret,
+      });
+    });
+
+    // Get all payment history
+    app.get("/payment/history", async (req, res) => {
+      const email = req.query.email;
+      const query = { email: email };
+      const result = await paymentCollection.find(query).toArray();
+      res.send(result);
+    });
+
+    // save payment confirm data to payment history
+    app.post("/payment/history", async (req, res) => {
+      const { paymentInfo } = req.body;
+      const result = await paymentCollection.insertOne(paymentInfo);
+
+      const query = {
+        _id: {
+          $in: paymentInfo.foodIds.map((item) => new ObjectId(item)),
+        },
+      };
+      // Now delete purchase food items
+      await purchaseFoodCollection.deleteMany(query);
+
       res.send(result);
     });
 
